@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Octave Informatique - Recharge Express</title>
+  <!-- CSP : empêche l'exécution de scripts inline non autorises et limite les sources -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; img-src 'self' https://upload.wikimedia.org https://*.wikimedia.org; style-src 'self' 'unsafe-inline'; connect-src 'self';">
+  <style>
+    body { margin:0; font-family: Arial, sans-serif; background: linear-gradient(135deg, #0f2027, #203a43); color:white; }
+    .container { max-width: 420px; margin: 20px auto; background: rgba(255,255,255,0.05); border-radius: 20px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+    header { background: white; padding: 30px 15px; text-align:center; }
+    .text-logo {
+      font-size: 28px;
+      font-weight: 900;
+      color: #001f3f;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .text-logo span { color: #00d2ff; font-size: 32px; }
+    .content { padding:25px; }
+    select, input { width:100%; padding:15px; margin:12px 0; border-radius:12px; border:none; font-size:16px; box-sizing:border-box; }
+    .operators { display:flex; justify-content:space-around; margin:30px 0; }
+    .op { width:105px; height:105px; padding:10px; border-radius:20px; background:rgba(255,255,255,0.1); transition:0.3s; cursor:pointer; }
+    .op img { width:100%; height:100%; object-fit:contain; pointer-events:none; }
+    .op.selected { background:#00d2ff; transform:scale(1.15); box-shadow: 0 0 25px #00d2ff; }
+    .price { text-align:center; font-size:32px; font-weight:bold; margin:25px 0; color:#00d2ff; opacity:0; transition:0.4s; }
+    .price.visible { opacity:1; }
+    button { width:100%; padding:18px; margin:15px 0; border:none; border-radius:12px; font-size:18px; font-weight:bold; color:white; cursor:pointer; }
+    .btn-wave { background:#00d2ff; }
+    .btn-wa { background:#25d366; }
+    .btn-sms { background:#128c7e; }
+    .btn-physique { background:#28a745; }
+    .payment-info { text-align:center; background:rgba(0,0,0,0.4); padding:15px; border-radius:12px; margin:20px 0; }
+    footer { text-align:center; padding:20px; background:#000; font-size:14px; }
+    .error { color:#ff6b6b; font-size:14px; margin-top:-8px; margin-bottom:8px; display:none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="text-logo">
+        Octave<span> Informatique</span><br>
+        <small style="font-size:16px; color:#333; letter-spacing:1px; font-weight:normal;">Recharge Express</small>
+      </div>
+    </header>
+
+    <div class="content">
+      <p style="text-align:center; font-size:18px;">Choisis ton opérateur</p>
+      <div class="operators">
+        <div class="op selected" data-op="orange" onclick="selectOp('orange')">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/c/c8/Orange_logo.svg" alt="Orange">
+        </div>
+        <div class="op" data-op="mtn" onclick="selectOp('mtn')">
+          <img src="https://upload.wikimedia.org/wikipedia/fr/e/e9/Mtn-logo-svg.svg" alt="MTN">
+        </div>
+        <div class="op" data-op="moov" onclick="selectOp('moov')">
+          <img src="https://upload.wikimedia.org/wikipedia/fr/1/1d/Moov_Africa_logo.png" alt="Moov Africa">
+        </div>
+      </div>
+
+      <select id="service"><option value="">Choisis le service</option></select>
+
+      <input type="tel" id="phone" placeholder="Numéro à recharger (ex: 0708091011)" maxlength="10" pattern="[0-9]{10}" inputmode="numeric">
+      <div id="phone-error" class="error">Numéro invalide (10 chiffres requis, ex: 0708091011)</div>
+
+      <input type="number" id="montant" placeholder="Montant que tu veux payer (ex: 1000)" min="50" max="500000">
+      <div id="montant-error" class="error">Montant invalide (minimum 50 FCFA, maximum 500 000 FCFA)</div>
+
+      <div class="price" id="total">Total : 0 FCFA</div>
+
+      <div class="payment-info">
+        <strong>Choisis comment me contacter ou payer :</strong>
+      </div>
+
+      <button class="btn-wave" onclick="payerWave()">Payer exactement ce montant via Wave</button>
+      <button class="btn-wa" onclick="envoyerWhatsApp()">Envoyer par WhatsApp</button>
+      <button class="btn-sms" onclick="envoyerSMS()">Envoyer par SMS</button>
+      <button class="btn-physique" onclick="payerPhysique()">Payer en espèces</button>
+    </div>
+
+    <footer>
+      Octave Informatique © 2025 • Abidjan • +225 0584921917
+    </footer>
+  </div>
+
+  <script>
+    (function() {
+      "use strict";
+
+      let operateur = "ORANGE";
+
+      const services = {
+        orange: ["Crédit direct", "Forfait appels (souscription)", "Forfait Internet (souscription)"],
+        moov: ["Crédit d'appels (direct)", "Forfait appels (souscription)", "Forfait Internet (souscription)", "Moov Folie (Appels)", "Moov Folie (Internet)", "Moov Folie Double"],
+        mtn: ["Crédit d'appels (direct)", "Forfait Appels (souscription)", "Forfait Internet (souscription)", "Forfait MTN C'chic (Internet)"]
+      };
+
+      // Constantes sécurisees
+      const MON_NUMERO = "2250584921917";
+      const LIEN_WAVE_BASE = "https://pay.wave.com/m/M_ci_7CIg4jpqcsl7/";
+      const LIEN_WAVE_FIN = "/c/ci/";
+
+      const msgerr = {
+        champs: "Veuillez remplir tous les champs obligatoires.",
+        telephone: "Numero de telephone invalide. Utilisez le format 0708091011 (10 chiffres).",
+        service: "Veuillez choisir un service dans la liste.",
+        montant: "Montant invalide. Minimum 50 FCFA, maximum 500 000 FCFA."
+      };
+
+      // Validation stricte d'un numero ivoirien (0708091011 ou +2250708091011)
+      function validerTelephone(phone) {
+        if (!phone) return false;
+        // Nettoie : enleve tout sauf chiffres et +
+        var nettoye = phone.replace(/[\s\-\.]/g, "");
+        // Format court: 10 chiffres commencant par 0
+        if (/^0[0-9]{9}$/.test(nettoye)) return "0" + nettoye.substring(1); // Normalise sans le 0 initial pour stockage
+        // Format long avec indicatif
+        if (/^\+225[0-9]{10}$/.test(nettoye)) return nettoye.substring(4);
+        if (/^225[0-9]{10}$/.test(nettoye)) return nettoye.substring(3);
+        return false;
+      }
+
+      function validerMontant(m) {
+        var val = parseInt(m, 10);
+        if (isNaN(val) || val < 50 || val > 500000) return false;
+        return val;
+      }
+
+      function selectOp(op) {
+        if (!op || !services[op]) return;
+        var ops = document.querySelectorAll('.op');
+        ops.forEach(function(e) { e.classList.remove('selected'); });
+        // Trouve l'element correspondant
+        ops.forEach(function(e) {
+          if (e.getAttribute('data-op') === op) {
+            e.classList.add('selected');
+          }
+        });
+        operateur = op.toUpperCase();
+        var select = document.getElementById('service');
+        select.innerHTML = '<option value="">Choisis le service</option>';
+        services[op].forEach(function(s) {
+          var opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          select.appendChild(opt);
+        });
+        document.getElementById('total').classList.remove('visible');
+        document.getElementById('montant-error').style.display = 'none';
+        document.getElementById('phone-error').style.display = 'none';
+      }
+
+      document.getElementById('montant').addEventListener('input', function() {
+        var m = validerMontant(this.value);
+        var totalEl = document.getElementById('total');
+        if (m === false) {
+          totalEl.textContent = "Montant invalide";
+          totalEl.classList.add('visible');
+          totalEl.style.color = "#ff6b6b";
+          return;
+        }
+        totalEl.textContent = "Montant : " + m + " FCFA";
+        totalEl.style.color = "#00d2ff";
+        totalEl.classList.add('visible');
+        document.getElementById('montant-error').style.display = 'none';
+      });
+
+      function validerFormulaire() {
+        var service = document.getElementById('service').value;
+        var phone = document.getElementById('phone').value;
+        var montant = document.getElementById('montant').value;
+        var erreurs = false;
+
+        // Validation service
+        if (!service) {
+          document.getElementById('service').style.border = "2px solid #ff6b6b";
+          erreurs = true;
+        } else {
+          document.getElementById('service').style.border = "none";
+        }
+
+        // Validation telephone
+        var phoneValid = validerTelephone(phone);
+        var phoneError = document.getElementById('phone-error');
+        if (!phoneValid) {
+          phoneError.style.display = 'block';
+          document.getElementById('phone').style.border = "2px solid #ff6b6b";
+          erreurs = true;
+        } else {
+          phoneError.style.display = 'none';
+          document.getElementById('phone').style.border = "none";
+        }
+
+        // Validation montant
+        var montantVal = validerMontant(montant);
+        var montantError = document.getElementById('montant-error');
+        if (montantVal === false) {
+          montantError.style.display = 'block';
+          document.getElementById('montant').style.border = "2px solid #ff6b6b";
+          erreurs = true;
+        } else {
+          montantError.style.display = 'none';
+          document.getElementById('montant').style.border = "none";
+        }
+
+        if (erreurs) {
+          return false;
+        }
+
+        return {
+          service: service,
+          phone: phone,
+          phoneClean: phoneValid,
+          montant: montantVal
+        };
+      }
+
+      function genererMessage(donnees) {
+        return encodeURIComponent(
+          "*NOUVELLE DEMANDE RECHARGE*\n\n" +
+          "Octave Informatique\n" +
+          "Operateur : " + operateur + "\n" +
+          "Numero : " + donnees.phone + "\n" +
+          "Service : " + donnees.service + "\n" +
+          "Montant : " + donnees.montant + " FCFA\n\n" +
+          "Merci pour votre confiance"
+        );
+      }
+
+      window.selectOp = selectOp;
+
+      window.payerWave = function() {
+        var donnees = validerFormulaire();
+        if (!donnees) return;
+        var m = donnees.montant;
+        // Securite : s'assurer que le montant est un entier positif
+        if (m < 50) {
+          alert(msgerr.montant);
+          return;
+        }
+        window.open(LIEN_WAVE_BASE + m + LIEN_WAVE_FIN, '_blank');
+      };
+
+      window.envoyerWhatsApp = function() {
+        var donnees = validerFormulaire();
+        if (!donnees) return;
+        var msg = genererMessage(donnees);
+        window.open("https://wa.me/" + MON_NUMERO + "?text=" + msg);
+      };
+
+      window.envoyerSMS = function() {
+        var donnees = validerFormulaire();
+        if (!donnees) return;
+        var msg = genererMessage(donnees);
+        window.open("sms:" + MON_NUMERO + "?body=" + msg);
+      };
+
+      window.payerPhysique = function() {
+        var donnees = validerFormulaire();
+        if (!donnees) return;
+        var msg = genererMessage(donnees) + "%0A%0A(Je passe payer en especes)";
+        window.open("https://wa.me/" + MON_NUMERO + "?text=" + msg);
+      };
+
+      // Initialisation
+      selectOp('orange');
+    })();
+  </script>
+</body>
+</html>
