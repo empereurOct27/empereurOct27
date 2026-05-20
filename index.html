@@ -4,45 +4,41 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Octave Informatique - Recharge Express</title>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://upload.wikimedia.org https://pay.wave.com https://*.wikimedia.org; script-src 'self' 'unsafe-inline'; img-src 'self' https://upload.wikimedia.org https://*.wikimedia.org data:; style-src 'self' 'unsafe-inline'; connect-src 'self';">
+  <!-- CSP : empêche l'exécution de scripts inline non autorises et limite les sources -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; img-src 'self' https://upload.wikimedia.org https://*.wikimedia.org; style-src 'self' 'unsafe-inline'; connect-src 'self';">
   <style>
     body { margin:0; font-family: Arial, sans-serif; background: linear-gradient(135deg, #0f2027, #203a43); color:white; }
     .container { max-width: 420px; margin: 20px auto; background: rgba(255,255,255,0.05); border-radius: 20px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
     header { background: white; padding: 30px 15px; text-align:center; }
-    .text-logo { font-size:28px; font-weight:900; color:#001f3f; text-transform:uppercase; letter-spacing:2px; text-shadow:2px 2px 4px rgba(0,0,0,0.2); }
-    .text-logo span { color:#00d2ff; font-size:32px; }
+    .text-logo {
+      font-size: 28px;
+      font-weight: 900;
+      color: #001f3f;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .text-logo span { color: #00d2ff; font-size: 32px; }
     .content { padding:25px; }
-    select, input { width:100%; padding:15px; margin:12px 0; border-radius:12px; border:none; font-size:16px; box-sizing:border-box; background:rgba(255,255,255,0.12); color:white; }
-    select option { background:#203a43; }
-    input::placeholder { color:rgba(255,255,255,0.5); }
+    select, input { width:100%; padding:15px; margin:12px 0; border-radius:12px; border:none; font-size:16px; box-sizing:border-box; }
     .operators { display:flex; justify-content:space-around; margin:30px 0; }
-    .op { width:105px; height:105px; padding:10px; border-radius:20px; background:rgba(255,255,255,0.1); transition:0.3s; cursor:pointer; border:3px solid transparent; }
+    .op { width:105px; height:105px; padding:10px; border-radius:20px; background:rgba(255,255,255,0.1); transition:0.3s; cursor:pointer; }
     .op img { width:100%; height:100%; object-fit:contain; pointer-events:none; }
-    .op.selected { background:#00d2ff; transform:scale(1.15); box-shadow:0 0 25px #00d2ff; border-color:#fff; }
+    .op.selected { background:#00d2ff; transform:scale(1.15); box-shadow: 0 0 25px #00d2ff; }
     .price { text-align:center; font-size:32px; font-weight:bold; margin:25px 0; color:#00d2ff; opacity:0; transition:0.4s; }
     .price.visible { opacity:1; }
-    button { width:100%; padding:18px; margin:15px 0; border:none; border-radius:12px; font-size:18px; font-weight:bold; color:white; cursor:pointer; transition:0.2s; }
-    button:hover { filter:brightness(1.15); transform:scale(1.02); }
+    button { width:100%; padding:18px; margin:15px 0; border:none; border-radius:12px; font-size:18px; font-weight:bold; color:white; cursor:pointer; }
     .btn-wave { background:#00d2ff; }
     .btn-wa { background:#25d366; }
     .btn-sms { background:#128c7e; }
     .btn-physique { background:#28a745; }
     .payment-info { text-align:center; background:rgba(0,0,0,0.4); padding:15px; border-radius:12px; margin:20px 0; }
     footer { text-align:center; padding:20px; background:#000; font-size:14px; }
-    .error { color:#ff6b6b; font-size:13px; margin:-8px 0 8px 0; display:none; }
-    .ns-popup { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:99999; justify-content:center; align-items:center; flex-direction:column; }
-    .ns-popup h1 { color:#ff4444; font-size:28px; }
-    .ns-popup p { color:#ccc; font-size:16px; }
+    .error { color:#ff6b6b; font-size:14px; margin-top:-8px; margin-bottom:8px; display:none; }
   </style>
 </head>
 <body>
-  <!-- Anti DevTools popup -->
-  <div class="ns-popup" id="nsPopup">
-    <h1>🔒 Accès sécurisé</h1>
-    <p>Veuillez fermer les outils de développement pour accéder au service.</p>
-  </div>
-
-  <div class="container" id="appContainer">
+  <div class="container">
     <header>
       <div class="text-logo">
         Octave<span> Informatique</span><br>
@@ -53,211 +49,224 @@
     <div class="content">
       <p style="text-align:center; font-size:18px;">Choisis ton opérateur</p>
       <div class="operators">
-        <div class="op selected" data-op="orange" onclick="A('orange')">
+        <div class="op selected" data-op="orange" onclick="selectOp('orange')">
           <img src="https://upload.wikimedia.org/wikipedia/commons/c/c8/Orange_logo.svg" alt="Orange">
         </div>
-        <div class="op" data-op="mtn" onclick="A('mtn')">
+        <div class="op" data-op="mtn" onclick="selectOp('mtn')">
           <img src="https://upload.wikimedia.org/wikipedia/fr/e/e9/Mtn-logo-svg.svg" alt="MTN">
         </div>
-        <div class="op" data-op="moov" onclick="A('moov')">
+        <div class="op" data-op="moov" onclick="selectOp('moov')">
           <img src="https://upload.wikimedia.org/wikipedia/fr/1/1d/Moov_Africa_logo.png" alt="Moov Africa">
         </div>
       </div>
 
-      <select id="S"><option value="">Choisis le service</option></select>
-      <div class="error" id="eS">Veuillez choisir un service</div>
+      <select id="service"><option value="">Choisis le service</option></select>
 
-      <input type="tel" id="P" placeholder="Numéro à recharger (ex: 0708091011)" maxlength="10" inputmode="numeric">
-      <div class="error" id="eP">Numéro invalide (10 chiffres)</div>
+      <input type="tel" id="phone" placeholder="Numéro à recharger (ex: 0708091011)" maxlength="10" pattern="[0-9]{10}" inputmode="numeric">
+      <div id="phone-error" class="error">Numéro invalide (10 chiffres requis, ex: 0708091011)</div>
 
-      <input type="number" id="M" placeholder="Montant (min 50 FCFA)" min="50">
-      <div class="error" id="eM">Montant minimum : 50 FCFA</div>
+      <input type="number" id="montant" placeholder="Montant que tu veux payer (ex: 1000)" min="50" max="500000">
+      <div id="montant-error" class="error">Montant invalide (minimum 50 FCFA, maximum 500 000 FCFA)</div>
 
-      <div class="price" id="T">Total : 0 FCFA</div>
+      <div class="price" id="total">Total : 0 FCFA</div>
 
       <div class="payment-info">
         <strong>Choisis comment me contacter ou payer :</strong>
       </div>
 
-      <button class="btn-wave" onclick="X('wave')">Payer via Wave</button>
-      <button class="btn-wa" onclick="X('wa')">WhatsApp</button>
-      <button class="btn-sms" onclick="X('sms')">SMS</button>
-      <button class="btn-physique" onclick="X('cash')">Espèces</button>
+      <button class="btn-wave" onclick="payerWave()">Payer exactement ce montant via Wave</button>
+      <button class="btn-wa" onclick="envoyerWhatsApp()">Envoyer par WhatsApp</button>
+      <button class="btn-sms" onclick="envoyerSMS()">Envoyer par SMS</button>
+      <button class="btn-physique" onclick="payerPhysique()">Payer en espèces</button>
     </div>
 
     <footer>
-      Octave Informatique &copy; 2025 &bull; Abidjan
+      Octave Informatique © 2025 • Abidjan • +225 0584921917
     </footer>
   </div>
 
   <script>
-  (function() {
-    "use strict";
+    (function() {
+      "use strict";
 
-    // === Anti DevTools ===
-    var ns = document.getElementById('nsPopup');
+      let operateur = "ORANGE";
 
-    function detecta() {
-      var d = new Date();
-      debugger;
-      if (new Date() - d > 100) {
-        ns.style.display = 'flex';
-        return true;
+      const services = {
+        orange: ["Crédit direct", "Forfait appels (souscription)", "Forfait Internet (souscription)"],
+        moov: ["Crédit d'appels (direct)", "Forfait appels (souscription)", "Forfait Internet (souscription)", "Moov Folie (Appels)", "Moov Folie (Internet)", "Moov Folie Double"],
+        mtn: ["Crédit d'appels (direct)", "Forfait Appels (souscription)", "Forfait Internet (souscription)", "Forfait MTN C'chic (Internet)"]
+      };
+
+      // Constantes sécurisees
+      const MON_NUMERO = "2250584921917";
+      const LIEN_WAVE_BASE = "https://pay.wave.com/m/M_ci_7CIg4jpqcsl7/";
+      const LIEN_WAVE_FIN = "/c/ci/";
+
+      const msgerr = {
+        champs: "Veuillez remplir tous les champs obligatoires.",
+        telephone: "Numero de telephone invalide. Utilisez le format 0708091011 (10 chiffres).",
+        service: "Veuillez choisir un service dans la liste.",
+        montant: "Montant invalide. Minimum 50 FCFA, maximum 500 000 FCFA."
+      };
+
+      // Validation stricte d'un numero ivoirien (0708091011 ou +2250708091011)
+      function validerTelephone(phone) {
+        if (!phone) return false;
+        // Nettoie : enleve tout sauf chiffres et +
+        var nettoye = phone.replace(/[\s\-\.]/g, "");
+        // Format court: 10 chiffres commencant par 0
+        if (/^0[0-9]{9}$/.test(nettoye)) return "0" + nettoye.substring(1); // Normalise sans le 0 initial pour stockage
+        // Format long avec indicatif
+        if (/^\+225[0-9]{10}$/.test(nettoye)) return nettoye.substring(4);
+        if (/^225[0-9]{10}$/.test(nettoye)) return nettoye.substring(3);
+        return false;
       }
-      return false;
-    }
 
-    // Blocage clic droit
-    document.addEventListener('contextmenu', function(e) {
-      e.preventDefault();
-      ns.style.display = 'flex';
-      setTimeout(function() { ns.style.display = 'none'; }, 2000);
-    });
-
-    // Blocage F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'F12' || 
-          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
-          (e.ctrlKey && e.key === 'U')) {
-        e.preventDefault();
-        ns.style.display = 'flex';
-        setTimeout(function() { ns.style.display = 'none'; }, 2000);
+      function validerMontant(m) {
+        var val = parseInt(m, 10);
+        if (isNaN(val) || val < 50 || val > 500000) return false;
+        return val;
       }
-    });
 
-    // Détection périodique
-    setInterval(function() {
-      detecta();
-    }, 2000);
-
-    // === Configuration chiffrée (simple XOR pour éviter une lecture directe) ===
-    // Les vrais secrets doivent être côté serveur
-    var _k = [78, 69, 84, 65, 68, 77, 73, 78]; // "NETADMIN" en bytes
-    function _d(arr) {
-      var r = '';
-      for (var i = 0; i < arr.length; i++) {
-        r += String.fromCharCode(arr[i] ^ _k[i % _k.length]);
+      function selectOp(op) {
+        if (!op || !services[op]) return;
+        var ops = document.querySelectorAll('.op');
+        ops.forEach(function(e) { e.classList.remove('selected'); });
+        // Trouve l'element correspondant
+        ops.forEach(function(e) {
+          if (e.getAttribute('data-op') === op) {
+            e.classList.add('selected');
+          }
+        });
+        operateur = op.toUpperCase();
+        var select = document.getElementById('service');
+        select.innerHTML = '<option value="">Choisis le service</option>';
+        services[op].forEach(function(s) {
+          var opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          select.appendChild(opt);
+        });
+        document.getElementById('total').classList.remove('visible');
+        document.getElementById('montant-error').style.display = 'none';
+        document.getElementById('phone-error').style.display = 'none';
       }
-      return r;
-    }
 
-    // Numéro de téléphone chiffré
-    var _num = _d([93, 30, 178, 112, 182, 108, 94, 147, 92, 39, 96, 56, 21, 168]);
-
-    // URLs Wave chiffrées
-    var _wB = _d([93, 30, 150, 81, 225, 242, 233, 71, 209, 48, 22, 125, 247, 92, 43, 149, 11, 244, 30, 255, 45, 249, 244, 50, 133, 96, 40, 17, 139, 35, 250, 129, 88, 15, 52, 150, 55, 169, 253, 178, 4, 119, 253, 149, 226, 62, 238, 155, 221, 147, 43, 44, 187, 149, 224, 142, 38, 150, 74, 125, 102, 3, 147]);
-    var _wF = _d([93, 30, 202, 166, 68, 25, 248, 32]);
-
-    // Données opérateurs
-    var _svc = {
-      orange: ["Crédit direct", "Forfait appels (souscription)", "Forfait Internet (souscription)"],
-      moov: ["Crédit d'appels (direct)", "Forfait appels (souscription)", "Forfait Internet (souscription)", "Moov Folie (Appels)", "Moov Folie (Internet)", "Moov Folie Double"],
-      mtn: ["Crédit d'appels (direct)", "Forfait Appels (souscription)", "Forfait Internet (souscription)", "Forfait MTN C'chic (Internet)"]
-    };
-
-    var _op = "ORANGE";
-
-    function _vP(p) {
-      var c = p.replace(/[\s\-\.]/g, "");
-      if (/^(0[1-57-9])\d{8}$/.test(c)) return c;
-      if (/^\+225[0-9]{10}$/.test(c)) return c.substring(4);
-      if (/^225[0-9]{10}$/.test(c)) return c.substring(3);
-      return false;
-    }
-
-    function _vM(m) {
-      var v = parseInt(m, 10);
-      if (isNaN(v) || v < 50 || v > 500000) return false;
-      return v;
-    }
-
-    // Fonctions exposées globalement avec noms courts
-    window.A = function(op) {
-      if (!op || !_svc[op]) return;
-      document.querySelectorAll('.op').forEach(function(e) { e.classList.remove('selected'); });
-      document.querySelectorAll('.op').forEach(function(e) {
-        if (e.getAttribute('data-op') === op) e.classList.add('selected');
+      document.getElementById('montant').addEventListener('input', function() {
+        var m = validerMontant(this.value);
+        var totalEl = document.getElementById('total');
+        if (m === false) {
+          totalEl.textContent = "Montant invalide";
+          totalEl.classList.add('visible');
+          totalEl.style.color = "#ff6b6b";
+          return;
+        }
+        totalEl.textContent = "Montant : " + m + " FCFA";
+        totalEl.style.color = "#00d2ff";
+        totalEl.classList.add('visible');
+        document.getElementById('montant-error').style.display = 'none';
       });
-      _op = op.toUpperCase();
-      var s = document.getElementById('S');
-      s.innerHTML = '<option value="">Choisis le service</option>';
-      _svc[op].forEach(function(v) {
-        var o = document.createElement('option');
-        o.value = v; o.textContent = v;
-        s.appendChild(o);
-      });
-      document.getElementById('T').classList.remove('visible');
-      document.getElementById('eM').style.display = 'none';
-      document.getElementById('eP').style.display = 'none';
-    };
 
-    document.getElementById('M').addEventListener('input', function() {
-      var v = _vM(this.value);
-      var t = document.getElementById('T');
-      if (v === false) {
-        t.textContent = "Montant invalide";
-        t.style.color = "#ff6b6b";
-      } else {
-        t.textContent = "Montant : " + v + " FCFA";
-        t.style.color = "#00d2ff";
-      }
-      t.classList.add('visible');
-      document.getElementById('eM').style.display = 'none';
-    });
+      function validerFormulaire() {
+        var service = document.getElementById('service').value;
+        var phone = document.getElementById('phone').value;
+        var montant = document.getElementById('montant').value;
+        var erreurs = false;
 
-    function _val() {
-      var s = document.getElementById('S').value;
-      var p = document.getElementById('P').value;
-      var m = document.getElementById('M').value;
-      var ok = true;
+        // Validation service
+        if (!service) {
+          document.getElementById('service').style.border = "2px solid #ff6b6b";
+          erreurs = true;
+        } else {
+          document.getElementById('service').style.border = "none";
+        }
 
-      if (!s) { document.getElementById('eS').style.display = 'block'; ok = false; }
-      else { document.getElementById('eS').style.display = 'none'; }
+        // Validation telephone
+        var phoneValid = validerTelephone(phone);
+        var phoneError = document.getElementById('phone-error');
+        if (!phoneValid) {
+          phoneError.style.display = 'block';
+          document.getElementById('phone').style.border = "2px solid #ff6b6b";
+          erreurs = true;
+        } else {
+          phoneError.style.display = 'none';
+          document.getElementById('phone').style.border = "none";
+        }
 
-      var pv = _vP(p);
-      if (!pv) { document.getElementById('eP').style.display = 'block'; ok = false; }
-      else { document.getElementById('eP').style.display = 'none'; }
+        // Validation montant
+        var montantVal = validerMontant(montant);
+        var montantError = document.getElementById('montant-error');
+        if (montantVal === false) {
+          montantError.style.display = 'block';
+          document.getElementById('montant').style.border = "2px solid #ff6b6b";
+          erreurs = true;
+        } else {
+          montantError.style.display = 'none';
+          document.getElementById('montant').style.border = "none";
+        }
 
-      var mv = _vM(m);
-      if (mv === false) { document.getElementById('eM').style.display = 'block'; ok = false; }
-      else { document.getElementById('eM').style.display = 'none'; }
+        if (erreurs) {
+          return false;
+        }
 
-      if (!ok) return false;
-      return { service: s, phone: p, phoneC: pv, montant: mv };
-    }
-
-    window.X = function(method) {
-      if (detecta()) return;
-      var d = _val();
-      if (!d) return;
-
-      var msg = encodeURIComponent(
-        "*NOUVELLE DEMANDE RECHARGE*\n\n" +
-        "Octave Informatique\n" +
-        "Opérateur : " + _op + "\n" +
-        "Numéro : " + d.phone + "\n" +
-        "Service : " + d.service + "\n" +
-        "Montant : " + d.montant + " FCFA\n\n" +
-        "Merci pour votre confiance"
-      );
-
-      var url = '';
-      if (method === 'wave') {
-        if (d.montant < 50) return;
-        url = _wB + d.montant + _wF;
-      } else if (method === 'wa') {
-        url = "https://wa.me/" + _num + "?text=" + msg;
-      } else if (method === 'sms') {
-        url = "sms:" + _num + "?body=" + msg;
-      } else if (method === 'cash') {
-        url = "https://wa.me/" + _num + "?text=" + msg + "%0A%0A(Je passe payer en espèces)";
+        return {
+          service: service,
+          phone: phone,
+          phoneClean: phoneValid,
+          montant: montantVal
+        };
       }
 
-      if (url) window.open(url, '_blank');
-    };
+      function genererMessage(donnees) {
+        return encodeURIComponent(
+          "*NOUVELLE DEMANDE RECHARGE*\n\n" +
+          "Octave Informatique\n" +
+          "Operateur : " + operateur + "\n" +
+          "Numero : " + donnees.phone + "\n" +
+          "Service : " + donnees.service + "\n" +
+          "Montant : " + donnees.montant + " FCFA\n\n" +
+          "Merci pour votre confiance"
+        );
+      }
 
-    window.A('orange');
-  })();
+      window.selectOp = selectOp;
+
+      window.payerWave = function() {
+        var donnees = validerFormulaire();
+        if (!donnees) return;
+        var m = donnees.montant;
+        // Securite : s'assurer que le montant est un entier positif
+        if (m < 50) {
+          alert(msgerr.montant);
+          return;
+        }
+        window.open(LIEN_WAVE_BASE + m + LIEN_WAVE_FIN, '_blank');
+      };
+
+      window.envoyerWhatsApp = function() {
+        var donnees = validerFormulaire();
+        if (!donnees) return;
+        var msg = genererMessage(donnees);
+        window.open("https://wa.me/" + MON_NUMERO + "?text=" + msg);
+      };
+
+      window.envoyerSMS = function() {
+        var donnees = validerFormulaire();
+        if (!donnees) return;
+        var msg = genererMessage(donnees);
+        window.open("sms:" + MON_NUMERO + "?body=" + msg);
+      };
+
+      window.payerPhysique = function() {
+        var donnees = validerFormulaire();
+        if (!donnees) return;
+        var msg = genererMessage(donnees) + "%0A%0A(Je passe payer en especes)";
+        window.open("https://wa.me/" + MON_NUMERO + "?text=" + msg);
+      };
+
+      // Initialisation
+      selectOp('orange');
+    })();
   </script>
 </body>
 </html>
